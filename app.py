@@ -59,7 +59,7 @@ st.markdown("""
 with st.sidebar:
     st.title("🛰️ 艦橋系統控制台")
     st.markdown("---")
-    st.info("💡 **操作指南**：\n- 點擊畫面任意處即可直接推進劇情\n- 電影旁白已改為極簡無框懸浮字幕\n- 空間折疊具備強烈震顫與低頻重轟鳴！")
+    st.info("💡 **操作指南**：\n- 點擊畫面任意處即可直接推進劇情\n- 電影旁白已改為極簡無框懸浮字幕\n- 空間折疊具備強烈震顫與低頻重轟鳴！\n- 遊戲結局通關後背景音樂自動關閉！")
     if st.button("🔄 重新載入遊戲 (Restart)", use_container_width=True):
         st.rerun()
 
@@ -366,7 +366,7 @@ STORY_DATA = [
         "left": None, "center": None, "right": None,
         "next_eval": True
     },
-    # 結局 A
+    # 結局 A (遊戲結束自動關閉背景音樂)
     {
         "id": "ending_transcendence_1",
         "bg": "bg_beacon.jpg",
@@ -379,7 +379,7 @@ STORY_DATA = [
         "right": {"char": "vivian", "state": "neutral"},
         "is_ending": True
     },
-    # 結局 B
+    # 結局 B (遊戲結束自動關閉背景音樂)
     {
         "id": "ending_abyss_1",
         "bg": "bg_bridge.jpg",
@@ -392,7 +392,7 @@ STORY_DATA = [
         "right": {"char": "vivian", "state": "panic"},
         "is_ending": True
     },
-    # 結局 C
+    # 結局 C (遊戲結束自動關閉背景音樂)
     {
         "id": "ending_vigil_1",
         "bg": "bg_bridge.jpg",
@@ -412,7 +412,7 @@ images_json = json.dumps(IMAGE_BASE64, ensure_ascii=False)
 audio_json = json.dumps(AUDIO_BASE64, ensure_ascii=False)
 
 # -------------------------------------------------------------
-# 100% 滿版電影級劇院 (支援點擊全畫面推進 + 極簡無框旁白 + 空間折疊劇烈震顫)
+# 100% 滿版電影級劇院 (結局自動停止音樂)
 # -------------------------------------------------------------
 full_stage_html = f"""
 <!DOCTYPE html>
@@ -436,7 +436,6 @@ full_stage_html = f"""
         overflow: hidden;
     }}
     
-    /* 滿版電影級 16:9 / 100% 沉浸式劇院視窗 (點擊任意處皆可前進) */
     #vn-theater {{
         position: relative;
         width: 100vw;
@@ -453,10 +452,9 @@ full_stage_html = f"""
         border-radius: 12px;
         border: 1px solid rgba(0, 229, 255, 0.3);
         box-shadow: 0 0 40px rgba(0, 229, 255, 0.15);
-        cursor: pointer; /* 點擊畫面任意處即可繼續 */
+        cursor: pointer;
     }}
 
-    /* 頂部 HUD 狀態列 */
     .top-hud {{
         display: flex;
         justify-content: space-between;
@@ -506,7 +504,6 @@ full_stage_html = f"""
         box-shadow: 0 0 15px #00e5ff;
     }}
 
-    /* 中間角色立繪舞臺 */
     .character-stage {{
         position: absolute;
         top: 0;
@@ -542,7 +539,6 @@ full_stage_html = f"""
         filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.8)) brightness(0.68);
     }}
 
-    /* 空間折疊震顫與強光衝擊特效 */
     @keyframes warpTremorAnim {{
         0% {{ transform: translate(0, 0) scale(1); filter: brightness(1); }}
         8% {{ transform: translate(-10px, 8px) scale(1.03); filter: brightness(3.0); }}
@@ -559,7 +555,6 @@ full_stage_html = f"""
         animation: warpTremorAnim 2.2s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
     }}
 
-    /* 角色表情動作動畫 */
     @keyframes alertGlow {{
         0% {{ filter: drop-shadow(0 0 15px rgba(0, 229, 255, 0.6)); }}
         50% {{ filter: drop-shadow(0 0 35px rgba(0, 229, 255, 1.0)) brightness(1.18); }}
@@ -579,7 +574,6 @@ full_stage_html = f"""
         animation: panicShake 0.4s infinite ease-in-out;
     }}
 
-    /* 底部字幕與對話 HUD */
     .bottom-hud {{
         position: relative;
         z-index: 50;
@@ -587,7 +581,6 @@ full_stage_html = f"""
         background: linear-gradient(0deg, rgba(3, 7, 18, 0.95) 0%, rgba(3, 7, 18, 0.5) 80%, rgba(3, 7, 18, 0) 100%);
     }}
     
-    /* 角色發言模式 (微透光科技對話框) */
     .dialogue-box.character-mode {{
         background: rgba(13, 27, 42, 0.88);
         backdrop-filter: blur(16px);
@@ -599,7 +592,6 @@ full_stage_html = f"""
         position: relative;
     }}
     
-    /* 🌟 電影旁白模式 (100% 無黑底、無邊框、純文字懸浮發光) */
     .dialogue-box.narrator-mode {{
         background: transparent !important;
         border: none !important;
@@ -624,7 +616,6 @@ full_stage_html = f"""
         letter-spacing: 1px;
     }}
 
-    /* 角色台詞文字 */
     .text-content.character-text {{
         font-size: 1.4rem;
         line-height: 1.7;
@@ -634,7 +625,6 @@ full_stage_html = f"""
         min-height: 55px;
     }}
 
-    /* 🌟 電影旁白純文字 (立體雙層清晰投影) */
     .text-content.narrator-text {{
         font-size: 1.55rem;
         line-height: 1.8;
@@ -659,7 +649,6 @@ full_stage_html = f"""
         animation: alertGlow 1s infinite alternate;
     }}
 
-    /* 決策按鈕容器 */
     .choices-overlay {{
         position: absolute;
         top: 40%;
@@ -692,7 +681,6 @@ full_stage_html = f"""
         transform: translateY(-2px);
     }}
 
-    /* 啟動解鎖蓋板 (Unlock Overlay) */
     #start-gate {{
         position: absolute;
         top: 0;
@@ -734,16 +722,13 @@ full_stage_html = f"""
 </head>
 <body>
 
-<!-- 點擊整個舞臺畫布皆可前進 -->
 <div id="vn-theater" onclick="handleStageClick(event)">
-    <!-- 啟動解鎖入口 -->
     <div id="start-gate">
         <div class="start-title">🌌 《星淵信標：深空重啟》</div>
         <p style="color: #a4b0be; font-size: 1.25rem;">100% 滿版電影級全語音互動式視覺小說</p>
         <button class="start-btn" onclick="startGame(event)">🚀 啟動艦橋通訊系統 (進入遊戲)</button>
     </div>
 
-    <!-- 頂部 HUD -->
     <div class="top-hud">
         <div class="game-title">BEACON OF THE ABYSS // 星淵信標</div>
         <div class="hud-meters">
@@ -753,17 +738,14 @@ full_stage_html = f"""
         </div>
     </div>
 
-    <!-- 角色舞臺 (立繪) -->
     <div class="character-stage">
         <div class="char-column" id="slot-left"></div>
         <div class="char-column" id="slot-center"></div>
         <div class="char-column" id="slot-right"></div>
     </div>
 
-    <!-- 決策分支選單 (動態彈出) -->
     <div id="choices-container" class="choices-overlay" style="display: none;"></div>
 
-    <!-- 底部字幕對話 HUD -->
     <div class="bottom-hud">
         <div id="dialogue-box" class="dialogue-box character-mode">
             <div id="speaker-tag" class="name-badge">電影旁白</div>
@@ -773,7 +755,6 @@ full_stage_html = f"""
     </div>
 </div>
 
-<!-- 音訊播放器 (語音、音效、BGM) -->
 <audio id="voiceAudio"></audio>
 <audio id="sfxAudio"></audio>
 <audio id="bgmAudio" loop></audio>
@@ -819,12 +800,15 @@ full_stage_html = f"""
         if (e) e.stopPropagation();
         startGate.style.display = "none";
         
-        // 啟動 BGM
         let bgmSrc = getAudioSrc("space_theme.mp3");
         if (bgmSrc) {{
             bgmAudio.src = bgmSrc;
             bgmAudio.volume = 0.35;
-            bgmAudio.play().then(() => {{ isBgmPlaying = true; }}).catch(e => console.log(e));
+            bgmAudio.play().then(() => {{
+                isBgmPlaying = true;
+                const btn = document.getElementById("bgmToggleBtn");
+                if (btn) btn.innerText = "🎵 BGM: 播放中";
+            }}).catch(e => console.log(e));
         }}
         renderNode(0);
     }}
@@ -848,16 +832,25 @@ full_stage_html = f"""
         currentIndex = index;
         const node = story[index];
 
+        // 🌟 遊戲結束自動停止背景音樂 (Auto Stop BGM on Game Ending)
+        if (node.is_ending) {{
+            bgmAudio.pause();
+            bgmAudio.currentTime = 0;
+            isBgmPlaying = false;
+            const btn = document.getElementById("bgmToggleBtn");
+            if (btn) btn.innerText = "🔇 BGM: 遊戲結束已停止";
+        }}
+
         // 1. 背景滿版更換
         let bgSrc = getImageSrc(node.bg);
         if (bgSrc) {{
             theater.style.backgroundImage = "url('" + bgSrc + "')";
         }}
 
-        // 2. 空間折疊劇烈震顫與音效觸發 (Space Warp Tremor)
+        // 2. 空間折疊劇烈震顫與音效觸發
         theater.classList.remove("screen-warp-tremor");
         if (node.shake) {{
-            void theater.offsetWidth; // Force Reflow
+            void theater.offsetWidth;
             theater.classList.add("screen-warp-tremor");
         }}
 
@@ -872,12 +865,10 @@ full_stage_html = f"""
 
         // 3. 電影旁白 vs 角色發言介面風格切換
         if (node.speaker_id === "narrator") {{
-            // 🌟 電影旁白：完全移除邊框與黑底，純文字立體懸浮
             dialogueBox.className = "dialogue-box narrator-mode";
             speakerTag.style.display = "none";
             dialogueText.className = "text-content narrator-text";
         }} else {{
-            // 角色發言：精緻微透光名牌與對話框
             dialogueBox.className = "dialogue-box character-mode";
             speakerTag.style.display = "inline-block";
             speakerTag.innerText = node.speaker;
@@ -984,7 +975,6 @@ full_stage_html = f"""
         }}
     }}
 
-    // 點擊整個畫面任意處推進劇情
     function handleStageClick(e) {{
         const node = story[currentIndex];
         if (node.choices && choicesContainer.style.display != "none") return;
@@ -1001,11 +991,23 @@ full_stage_html = f"""
             return;
         }}
 
+        // 結局播放完畢確認
         if (node.is_ending) {{
             if (confirm("🎉 本結局已播放完畢！是否重新開始探索其他結局？")) {{
                 trustAI = 0;
                 shipEnergy = 100;
                 updateMeters();
+                // 重新播放 BGM
+                let bgmSrc = getAudioSrc("space_theme.mp3");
+                if (bgmSrc) {{
+                    bgmAudio.src = bgmSrc;
+                    bgmAudio.volume = 0.35;
+                    bgmAudio.play().then(() => {{
+                        isBgmPlaying = true;
+                        const btn = document.getElementById("bgmToggleBtn");
+                        if (btn) btn.innerText = "🎵 BGM: 播放中";
+                    }}).catch(e => console.log(e));
+                }}
                 renderNode(0);
             }}
             return;
