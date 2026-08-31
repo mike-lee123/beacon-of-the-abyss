@@ -31,7 +31,6 @@ st.set_page_config(
 # -------------------------------------------------------------
 st.markdown("""
 <style>
-    /* 移除 Streamlit 頂部與周邊巨大邊距，實現極致滿版 */
     .main .block-container {
         max-width: 100% !important;
         padding-top: 0rem !important;
@@ -47,7 +46,6 @@ st.markdown("""
         background-color: #030712 !important;
         color: #f1f2f6;
     }
-    /* 隱藏側邊欄多餘留白 */
     section[data-testid="stSidebar"] {
         background-color: #0d1b2a !important;
         border-right: 1px solid rgba(0, 229, 255, 0.3);
@@ -61,15 +59,15 @@ st.markdown("""
 with st.sidebar:
     st.title("🛰️ 艦橋系統控制台")
     st.markdown("---")
-    st.info("💡 **操作指南**：\n- 點擊畫面任意處或【▶️ 下一句】繼續劇情\n- 點擊選項按鈕做出關鍵決策\n- 角色說話時嘴唇會依語音即時開闔！")
+    st.info("💡 **操作指南**：\n- 點擊畫面任意處即可直接推進劇情\n- 電影旁白已改為極簡無框懸浮字幕\n- 空間折疊具備強烈震顫與低頻重轟鳴！")
     if st.button("🔄 重新載入遊戲 (Restart)", use_container_width=True):
         st.rerun()
 
 # -------------------------------------------------------------
-# 完整劇本資料庫 (JSON 結構)
+# 完整劇本資料庫
 # -------------------------------------------------------------
 STORY_DATA = [
-    # 序幕 (Prologue)
+    # 序幕 (Prologue - 純文字無框電影旁白)
     {
         "id": "prologue_1",
         "bg": "bg_beacon.jpg",
@@ -249,13 +247,14 @@ STORY_DATA = [
         "right": {"char": "vivian", "state": "speaking"},
         "next_override": "beacon_1"
     },
-    # 第二章：古代外星晶體星門
+    # 第二章：古代外星晶體星門 (空間折疊震顫音效與強光震撼)
     {
         "id": "beacon_1",
         "bg": "bg_beacon.jpg",
         "speaker": "電影旁白",
         "speaker_id": "narrator",
         "sfx": "warp_rumble.mp3",
+        "shake": True,
         "text": "伴隨著劇烈的空間折疊震顫，海伯利昂號脫離了超空間！",
         "voice": "voice_nar_beacon_01.mp3",
         "left": None, "center": None, "right": None
@@ -336,6 +335,7 @@ STORY_DATA = [
         "speaker": "指揮官 亞底斯",
         "speaker_id": "p",
         "sfx": "laser.mp3",
+        "shake": True,
         "text": "薇薇安，全功率過載離子炮，立刻摧毀星門核心發射源！人類還沒準備好面對這個力量！",
         "voice": "voice_artis_ch2_b2.mp3",
         "left": {"char": "noah", "state": "alert"},
@@ -360,6 +360,7 @@ STORY_DATA = [
         "bg": "bg_beacon.jpg",
         "speaker": "電影旁白",
         "speaker_id": "narrator",
+        "shake": True,
         "text": "一道刺目的強光，瞬間吞沒了整座星艦！",
         "voice": "voice_nar_ending_flash.mp3",
         "left": None, "center": None, "right": None,
@@ -411,7 +412,7 @@ images_json = json.dumps(IMAGE_BASE64, ensure_ascii=False)
 audio_json = json.dumps(AUDIO_BASE64, ensure_ascii=False)
 
 # -------------------------------------------------------------
-# 100% 滿版電影級 HTML5 / WebGL 視覺小說引擎 (The Immersive Web VN Engine)
+# 100% 滿版電影級劇院 (支援點擊全畫面推進 + 極簡無框旁白 + 空間折疊劇烈震顫)
 # -------------------------------------------------------------
 full_stage_html = f"""
 <!DOCTYPE html>
@@ -435,7 +436,7 @@ full_stage_html = f"""
         overflow: hidden;
     }}
     
-    /* 滿版電影級 16:9 / 100% 沉浸式劇院視窗 */
+    /* 滿版電影級 16:9 / 100% 沉浸式劇院視窗 (點擊任意處皆可前進) */
     #vn-theater {{
         position: relative;
         width: 100vw;
@@ -452,6 +453,7 @@ full_stage_html = f"""
         border-radius: 12px;
         border: 1px solid rgba(0, 229, 255, 0.3);
         box-shadow: 0 0 40px rgba(0, 229, 255, 0.15);
+        cursor: pointer; /* 點擊畫面任意處即可繼續 */
     }}
 
     /* 頂部 HUD 狀態列 */
@@ -504,7 +506,7 @@ full_stage_html = f"""
         box-shadow: 0 0 15px #00e5ff;
     }}
 
-    /* 中間角色立繪舞臺 (滿版 560px 高解析立繪) */
+    /* 中間角色立繪舞臺 */
     .character-stage {{
         position: absolute;
         top: 0;
@@ -514,7 +516,7 @@ full_stage_html = f"""
         display: flex;
         align-items: flex-end;
         justify-content: space-around;
-        padding-bottom: 210px; /* 留出底部字幕空間 */
+        padding-bottom: 210px;
         pointer-events: none;
         z-index: 10;
     }}
@@ -540,7 +542,24 @@ full_stage_html = f"""
         filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.8)) brightness(0.68);
     }}
 
-    /* 表情動作 CSS 動畫 */
+    /* 空間折疊震顫與強光衝擊特效 */
+    @keyframes warpTremorAnim {{
+        0% {{ transform: translate(0, 0) scale(1); filter: brightness(1); }}
+        8% {{ transform: translate(-10px, 8px) scale(1.03); filter: brightness(3.0); }}
+        16% {{ transform: translate(10px, -8px) scale(1.04); filter: brightness(2.2); }}
+        24% {{ transform: translate(-8px, -6px) scale(1.03); filter: brightness(1.6); }}
+        32% {{ transform: translate(8px, 6px) scale(1.02); filter: brightness(1.3); }}
+        40% {{ transform: translate(-6px, 4px) scale(1.01); }}
+        50% {{ transform: translate(6px, -4px) scale(1.01); }}
+        65% {{ transform: translate(-3px, 2px) scale(1); }}
+        80% {{ transform: translate(3px, -2px) scale(1); }}
+        100% {{ transform: translate(0, 0) scale(1); filter: brightness(1); }}
+    }}
+    .screen-warp-tremor {{
+        animation: warpTremorAnim 2.2s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    }}
+
+    /* 角色表情動作動畫 */
     @keyframes alertGlow {{
         0% {{ filter: drop-shadow(0 0 15px rgba(0, 229, 255, 0.6)); }}
         50% {{ filter: drop-shadow(0 0 35px rgba(0, 229, 255, 1.0)) brightness(1.18); }}
@@ -560,14 +579,16 @@ full_stage_html = f"""
         animation: panicShake 0.4s infinite ease-in-out;
     }}
 
-    /* 底部 100% 滿版透明字幕與對話 HUD */
+    /* 底部字幕與對話 HUD */
     .bottom-hud {{
         position: relative;
         z-index: 50;
         padding: 0 30px 24px 30px;
-        background: linear-gradient(0deg, rgba(3, 7, 18, 0.95) 0%, rgba(3, 7, 18, 0.6) 80%, rgba(3, 7, 18, 0) 100%);
+        background: linear-gradient(0deg, rgba(3, 7, 18, 0.95) 0%, rgba(3, 7, 18, 0.5) 80%, rgba(3, 7, 18, 0) 100%);
     }}
-    .dialogue-box {{
+    
+    /* 角色發言模式 (微透光科技對話框) */
+    .dialogue-box.character-mode {{
         background: rgba(13, 27, 42, 0.88);
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
@@ -575,9 +596,21 @@ full_stage_html = f"""
         border-radius: 14px;
         padding: 20px 28px;
         box-shadow: 0 4px 30px rgba(0, 0, 0, 0.7);
-        cursor: pointer;
         position: relative;
     }}
+    
+    /* 🌟 電影旁白模式 (100% 無黑底、無邊框、純文字懸浮發光) */
+    .dialogue-box.narrator-mode {{
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        padding: 10px 40px 18px 40px;
+        text-align: center;
+        position: relative;
+    }}
+
     .name-badge {{
         display: inline-block;
         background: rgba(0, 229, 255, 0.22);
@@ -590,7 +623,9 @@ full_stage_html = f"""
         margin-bottom: 10px;
         letter-spacing: 1px;
     }}
-    .text-content {{
+
+    /* 角色台詞文字 */
+    .text-content.character-text {{
         font-size: 1.4rem;
         line-height: 1.7;
         color: #ffffff;
@@ -598,10 +633,26 @@ full_stage_html = f"""
         letter-spacing: 0.5px;
         min-height: 55px;
     }}
+
+    /* 🌟 電影旁白純文字 (立體雙層清晰投影) */
+    .text-content.narrator-text {{
+        font-size: 1.55rem;
+        line-height: 1.8;
+        color: #f1f2f6;
+        font-weight: 600;
+        font-style: italic;
+        letter-spacing: 1.2px;
+        text-shadow: 
+            2px 2px 6px rgba(0, 0, 0, 0.95),
+            -2px -2px 6px rgba(0, 0, 0, 0.95),
+            0 0 15px rgba(0, 229, 255, 0.4);
+        min-height: 55px;
+    }}
+
     .click-prompt {{
         position: absolute;
         right: 24px;
-        bottom: 14px;
+        bottom: 12px;
         font-size: 0.95rem;
         color: #00e5ff;
         font-weight: bold;
@@ -683,12 +734,13 @@ full_stage_html = f"""
 </head>
 <body>
 
-<div id="vn-theater">
+<!-- 點擊整個舞臺畫布皆可前進 -->
+<div id="vn-theater" onclick="handleStageClick(event)">
     <!-- 啟動解鎖入口 -->
     <div id="start-gate">
         <div class="start-title">🌌 《星淵信標：深空重啟》</div>
         <p style="color: #a4b0be; font-size: 1.25rem;">100% 滿版電影級全語音互動式視覺小說</p>
-        <button class="start-btn" onclick="startGame()">🚀 啟動艦橋通訊系統 (進入遊戲)</button>
+        <button class="start-btn" onclick="startGame(event)">🚀 啟動艦橋通訊系統 (進入遊戲)</button>
     </div>
 
     <!-- 頂部 HUD -->
@@ -697,7 +749,7 @@ full_stage_html = f"""
         <div class="hud-meters">
             <div class="meter-badge">🤖 AI 信任度: <span id="trust-val" style="color: #00e5ff; font-weight: bold;">0</span></div>
             <div class="meter-badge">⚡ 反物質能源: <span id="energy-val" style="color: #55efc4; font-weight: bold;">100%</span></div>
-            <button class="bgm-btn" id="bgmToggleBtn" onclick="toggleBGM()">🎵 BGM: 播放中</button>
+            <button class="bgm-btn" id="bgmToggleBtn" onclick="toggleBGM(event)">🎵 BGM: 播放中</button>
         </div>
     </div>
 
@@ -713,16 +765,17 @@ full_stage_html = f"""
 
     <!-- 底部字幕對話 HUD -->
     <div class="bottom-hud">
-        <div class="dialogue-box" onclick="handleStageClick()">
+        <div id="dialogue-box" class="dialogue-box character-mode">
             <div id="speaker-tag" class="name-badge">電影旁白</div>
-            <div id="dialogue-text" class="text-content">正在加載全艦感知網絡...</div>
-            <div class="click-prompt">▼ 點擊繼續 (NEXT)</div>
+            <div id="dialogue-text" class="text-content character-text">正在加載全艦感知網絡...</div>
+            <div class="click-prompt">▼ 點擊畫面任意處繼續 (NEXT)</div>
         </div>
     </div>
 </div>
 
-<!-- 音訊播放器 -->
+<!-- 音訊播放器 (語音、音效、BGM) -->
 <audio id="voiceAudio"></audio>
+<audio id="sfxAudio"></audio>
 <audio id="bgmAudio" loop></audio>
 
 <script>
@@ -738,10 +791,12 @@ full_stage_html = f"""
     let isMouthOpen = false;
 
     const theater = document.getElementById("vn-theater");
+    const dialogueBox = document.getElementById("dialogue-box");
     const speakerTag = document.getElementById("speaker-tag");
     const dialogueText = document.getElementById("dialogue-text");
     const choicesContainer = document.getElementById("choices-container");
     const voiceAudio = document.getElementById("voiceAudio");
+    const sfxAudio = document.getElementById("sfxAudio");
     const bgmAudio = document.getElementById("bgmAudio");
     const startGate = document.getElementById("start-gate");
 
@@ -760,9 +815,11 @@ full_stage_html = f"""
         return "audio/" + mp3Name;
     }}
 
-    function startGame() {{
+    function startGame(e) {{
+        if (e) e.stopPropagation();
         startGate.style.display = "none";
-        // 播放 BGM
+        
+        // 啟動 BGM
         let bgmSrc = getAudioSrc("space_theme.mp3");
         if (bgmSrc) {{
             bgmAudio.src = bgmSrc;
@@ -772,7 +829,8 @@ full_stage_html = f"""
         renderNode(0);
     }}
 
-    function toggleBGM() {{
+    function toggleBGM(e) {{
+        if (e) e.stopPropagation();
         const btn = document.getElementById("bgmToggleBtn");
         if (isBgmPlaying) {{
             bgmAudio.pause();
@@ -796,16 +854,43 @@ full_stage_html = f"""
             theater.style.backgroundImage = "url('" + bgSrc + "')";
         }}
 
-        // 2. 字幕與說話者
-        speakerTag.innerText = node.speaker;
+        // 2. 空間折疊劇烈震顫與音效觸發 (Space Warp Tremor)
+        theater.classList.remove("screen-warp-tremor");
+        if (node.shake) {{
+            void theater.offsetWidth; // Force Reflow
+            theater.classList.add("screen-warp-tremor");
+        }}
+
+        if (node.sfx) {{
+            let sfxSrc = getAudioSrc(node.sfx);
+            if (sfxSrc) {{
+                sfxAudio.src = sfxSrc;
+                sfxAudio.volume = 1.0;
+                sfxAudio.play().catch(e => console.log(e));
+            }}
+        }}
+
+        // 3. 電影旁白 vs 角色發言介面風格切換
+        if (node.speaker_id === "narrator") {{
+            // 🌟 電影旁白：完全移除邊框與黑底，純文字立體懸浮
+            dialogueBox.className = "dialogue-box narrator-mode";
+            speakerTag.style.display = "none";
+            dialogueText.className = "text-content narrator-text";
+        }} else {{
+            // 角色發言：精緻微透光名牌與對話框
+            dialogueBox.className = "dialogue-box character-mode";
+            speakerTag.style.display = "inline-block";
+            speakerTag.innerText = node.speaker;
+            dialogueText.className = "text-content character-text";
+        }}
         dialogueText.innerText = node.text;
 
-        // 3. 角色立繪呈現與動態對嘴綁定
+        // 4. 角色立繪呈現與動態對嘴綁定
         renderSlot("slot-left", node.left, node.speaker_id == "f2");
         renderSlot("slot-center", node.center, node.speaker_id == "p");
         renderSlot("slot-right", node.right, node.speaker_id == "f1");
 
-        // 4. 音訊播放與嘴唇即時開闔
+        // 5. 語音播放與嘴唇即時開闔
         if (lipFlapTimer) clearInterval(lipFlapTimer);
         
         let voiceSrc = getAudioSrc(node.voice);
@@ -820,7 +905,7 @@ full_stage_html = f"""
             voiceAudio.onpause = () => stopLipFlap(node.speaker_id);
         }}
 
-        // 5. 分支選單判定
+        // 6. 分支選單判定
         if (node.choices) {{
             choicesContainer.innerHTML = "";
             choicesContainer.style.display = "flex";
@@ -899,7 +984,8 @@ full_stage_html = f"""
         }}
     }}
 
-    function handleStageClick() {{
+    // 點擊整個畫面任意處推進劇情
+    function handleStageClick(e) {{
         const node = story[currentIndex];
         if (node.choices && choicesContainer.style.display != "none") return;
         
